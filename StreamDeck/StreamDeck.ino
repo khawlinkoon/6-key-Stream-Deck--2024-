@@ -1,5 +1,16 @@
 #include <Keyboard.h>
 
+// Key (-1 for nothing) Maximum 3 key press per key [Can add more]
+//https://www.arduino.cc/reference/en/language/functions/usb/keyboard/keyboardmodifiers/
+const int keys[6][3] = {
+  {KEY_LEFT_CTRL    ,int('c')   ,-1},      // Key 1
+  {KEY_LEFT_CTRL    ,int('v')   ,-1},      // Key 2
+  {KEY_KP_ENTER     ,-1         ,-1},      // Key 3
+  {KEY_UP_ARROW     ,-1         ,-1},      // Key 4
+  {KEY_DOWN_ARROW   ,-1         ,-1},      // Key 5
+  {KEY_LEFT_CTRL    ,KEY_F8     ,-1}       // Key 6
+};
+
 // Constants
 const int row_count = 2;
 const int col_count = 3;
@@ -15,8 +26,8 @@ unsigned long press[total_keys];
 unsigned long timing[total_keys];
 
 // Configs
-bool toggle_key = false;
-bool debug = true;
+bool toggle_key = true;
+bool debug = false;
 
 void setup() {
   Serial.begin(115200);
@@ -34,6 +45,7 @@ void setup() {
   Keyboard.begin();
 }
 
+// Return string of which key is pressed
 String readMatrix(){
   String output = "";
   for(int i=0;i<row_count;i++){
@@ -54,74 +66,22 @@ String readMatrix(){
   return output;
 }
 
+// Activate key
 void press_key(int ind){
   if(toggle_key){
-    switch(ind) {
-      case 0:
-        // Keyboard.press('1');
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.press('c');
-        break;
-      case 1:
-        // Keyboard.press('2');
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.press('v');
-        break;
-      case 2:
-        // Keyboard.press('3');
-        Keyboard.press(KEY_KP_ENTER);
-        break;
-      case 3:
-        // Keyboard.press('4');
-        // Keyboard.press(KEY_LEFT_ALT);
-        Keyboard.press(KEY_UP_ARROW);
-        break;
-      case 4:
-        // Keyboard.press('5');
-        // Keyboard.press(KEY_TAB);
-        Keyboard.press(KEY_DOWN_ARROW);
-        break;
-      case 5:
-        // Keyboard.press('6');
-        Keyboard.press(KEY_LEFT_CTRL);
-        Keyboard.press(KEY_F8);
-        break;
+    for(int i=0;i<2;i++){
+      if(keys[ind][i] != -1) Keyboard.press(keys[ind][i]);
+      else break;
     }
   }
 }
 
+// Deactivate key
 void release_key(int ind){
   if(toggle_key){
-    switch(ind) {
-      case 0:
-        // Keyboard.release('1');
-        Keyboard.release(KEY_LEFT_CTRL);
-        Keyboard.release('c');
-        break;
-      case 1:
-        // Keyboard.release('2');
-        Keyboard.release(KEY_LEFT_CTRL);
-        Keyboard.release('v');
-        break;
-      case 2:
-        // Keyboard.release('3');
-        Keyboard.release(KEY_KP_ENTER);
-        break;
-      case 3:
-        // Keyboard.release('4');
-        // Keyboard.release(KEY_LEFT_ALT);
-        Keyboard.release(KEY_UP_ARROW);
-        break;
-      case 4:
-        // Keyboard.release('5');
-        // Keyboard.release(KEY_TAB);
-        Keyboard.release(KEY_DOWN_ARROW);
-        break;
-      case 5:
-        // Keyboard.release('6');
-        Keyboard.release(KEY_LEFT_CTRL);
-        Keyboard.release(KEY_F8);
-        break;
+    for(int i=0;i<2;i++){
+      if(keys[ind][i] != -1) Keyboard.release(keys[ind][i]);
+      else break;
     }
   }
 }
