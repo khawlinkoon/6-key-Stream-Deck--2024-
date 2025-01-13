@@ -1,14 +1,45 @@
-#include <Keyboard.h>
+#define HID_CUSTOM_LAYOUT
+#define LAYOUT_US_ENGLISH
+
+#define SECOND_PRESS_TIMING 1000
+#define CONTINUOUS_PRESS_TIMING 50
+
+#include <HID-Project.h>
 
 // Key (-1 for nothing) Maximum 3 key press per key [Can add more]
-//https://www.arduino.cc/reference/en/language/functions/usb/keyboard/keyboardmodifiers/
-const int keys[6][3] = {
-  {KEY_LEFT_CTRL    ,int('c')   ,-1},      // Key 1
-  {KEY_LEFT_CTRL    ,int('v')   ,-1},      // Key 2
-  {KEY_KP_ENTER     ,-1         ,-1},      // Key 3
-  {KEY_UP_ARROW     ,-1         ,-1},      // Key 4
-  {KEY_DOWN_ARROW   ,-1         ,-1},      // Key 5
-  {KEY_LEFT_CTRL    ,KEY_F8     ,-1}       // Key 6
+// Keyboard Layout = https://github.com/NicoHood/HID/blob/master/src/KeyboardLayouts/ImprovedKeylayouts.h
+// Media Layout = https://github.com/NicoHood/HID/blob/master/src/HID-APIs/ConsumerAPI.h
+
+enum KeyboardState : int {
+  KeyKeyboard = 0,
+  KeyMedia = 1,
+};
+
+const KeyboardState keys_switch[6]{
+  KeyMedia,
+  KeyMedia,
+  KeyMedia,
+  KeyMedia,
+  KeyKeyboard,
+  KeyKeyboard,
+};
+
+const ConsumerKeycode keys_consumer[6] = {
+  MEDIA_VOLUME_UP,              // Key 1
+  MEDIA_PLAY_PAUSE,             // Key 2
+  HID_CONSUMER_UNASSIGNED,      // Key 3
+  MEDIA_VOLUME_DOWN,            // Key 4
+  HID_CONSUMER_UNASSIGNED,      // Key 5
+  HID_CONSUMER_UNASSIGNED       // Key 6
+};
+
+const KeyboardKeycode keys_keyboard[6][3] = {
+  {KEY_RESERVED, KEY_RESERVED, KEY_RESERVED},      // Key 1
+  {KEY_RESERVED, KEY_RESERVED, KEY_RESERVED},      // Key 2
+  {KEY_RESERVED, KEY_RESERVED, KEY_RESERVED},      // Key 3
+  {KEY_RESERVED, KEY_RESERVED, KEY_RESERVED},      // Key 4
+  {KEY_LEFT_CTRL, KEY_LEFT_SHIFT, KEY_M},            // Key 5
+  {KEY_LEFT_CTRL, KEY_F8, KEY_RESERVED}            // Key 6
 };
 
 // Constants
@@ -42,7 +73,8 @@ void setup() {
     timing[i] = millis();
   }
 
-  Keyboard.begin();
+  BootKeyboard.begin();
+  Consumer.begin();
 }
 
 // Return string of which key is pressed
@@ -69,9 +101,14 @@ String readMatrix(){
 // Activate key
 void press_key(int ind){
   if(toggle_key){
-    for(int i=0;i<2;i++){
-      if(keys[ind][i] != -1) Keyboard.press(keys[ind][i]);
-      else break;
+    if(keys_switch[ind] == KeyKeyboard){
+      for(int i=0;i<sizeof(keys_keyboard[ind]);i++){
+        if(keys_keyboard[ind][i] != KEY_RESERVED) BootKeyboard.press(keys_keyboard[ind][i]);
+        else break;
+      }
+    }
+    else if(keys_switch[ind] == KeyMedia){
+      Consumer.write(keys_consumer[ind]);
     }
   }
 }
@@ -79,9 +116,14 @@ void press_key(int ind){
 // Deactivate key
 void release_key(int ind){
   if(toggle_key){
-    for(int i=0;i<2;i++){
-      if(keys[ind][i] != -1) Keyboard.release(keys[ind][i]);
-      else break;
+    if(keys_switch[ind] == KeyKeyboard){
+      for(int i=0;i<sizeof(keys_keyboard[ind]);i++){
+        if(keys_keyboard[ind][i] != KEY_RESERVED) BootKeyboard.release(keys_keyboard[ind][i]);
+        else break;
+      }
+    }
+    else if(keys_switch[ind] == KeyMedia){
+      Consumer.release(keys_consumer[ind]);
     }
   }
 }
@@ -98,14 +140,14 @@ void loop() {
           timing[i*col_count+j] = millis();
         }
         else if(press[i*col_count+j] == 1){
-          if((millis()-timing[i*col_count+j])>=500){
+          if((millis()-timing[i*col_count+j])>=SECOND_PRESS_TIMING){
             press_key(i*col_count+j);
             press[i*col_count+j]++;
             timing[i*col_count+j] = millis();
           }
         }
         else{
-          if((millis()-timing[i*col_count+j])>=30){
+          if((millis()-timing[i*col_count+j])>=CONTINUOUS_PRESS_TIMING){
             press_key(i*col_count+j);
             press[i*col_count+j]++;
             timing[i*col_count+j] = millis();
